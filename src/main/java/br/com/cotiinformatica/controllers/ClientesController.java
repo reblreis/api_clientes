@@ -2,7 +2,10 @@ package br.com.cotiinformatica.controllers;
 
 import java.util.List;
 
+import javax.validation.Valid;
+
 import org.modelmapper.ModelMapper;
+import org.modelmapper.TypeToken;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,7 +36,7 @@ public class ClientesController {
 
 	@ApiOperation("Serviço para cadastro de clientes.")
 	@PostMapping("/api/clientes")
-	public ResponseEntity<ResponseClientesDTO> post(@RequestBody PostClientesDTO dto) {
+	public ResponseEntity<ResponseClientesDTO> post(@Valid @RequestBody PostClientesDTO dto) {
 
 		ResponseClientesDTO response = new ResponseClientesDTO();
 
@@ -66,23 +69,30 @@ public class ClientesController {
 
 	@ApiOperation("Serviço para edição de clientes.")
 	@PutMapping("/api/clientes")
-	public ResponseEntity<ResponseClientesDTO> put(@RequestBody PutClientesDTO dto) {
+	public ResponseEntity<ResponseClientesDTO> put(@Valid @RequestBody PutClientesDTO dto) {
 
 		ResponseClientesDTO response = new ResponseClientesDTO();
 
 		try {
 
-			//TODO
+			ModelMapper modelMapper = new ModelMapper();
+			Cliente cliente = modelMapper.map(dto, Cliente.class);
+
+			clienteService.atualizar(cliente);
+
+			response.setStatus(200);
+			response.setMensagem("Cliente atualizado com sucesso.");
+			response.setCliente(modelMapper.map(cliente, GetClientesDTO.class));
 
 			return ResponseEntity.status(HttpStatus.OK).body(response);
-			
+
 		} catch (IllegalArgumentException e) {
 
 			response.setStatus(400);
 			response.setMensagem(e.getMessage());
 
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-			
+
 		} catch (Exception e) {
 
 			response.setStatus(500);
@@ -100,17 +110,23 @@ public class ClientesController {
 
 		try {
 
-			//TODO
+			Cliente cliente = clienteService.excluir(idCliente);
+
+			ModelMapper modelMapper = new ModelMapper();
+
+			response.setStatus(200);
+			response.setMensagem("Cliente excluído com sucesso.");
+			response.setCliente(modelMapper.map(cliente, GetClientesDTO.class));
 
 			return ResponseEntity.status(HttpStatus.OK).body(response);
-			
+
 		} catch (IllegalArgumentException e) {
 
 			response.setStatus(400);
 			response.setMensagem(e.getMessage());
 
 			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
-			
+
 		} catch (Exception e) {
 
 			response.setStatus(500);
@@ -123,12 +139,30 @@ public class ClientesController {
 	@ApiOperation("Serviço para consulta de clientes.")
 	@GetMapping("/api/clientes")
 	public ResponseEntity<List<GetClientesDTO>> getAll() {
-		return null;
+
+		ModelMapper modelMapper = new ModelMapper();
+
+		List<Cliente> clientes = clienteService.consultarTodos();
+		List<GetClientesDTO> clientesDTO = modelMapper.map(clientes, new TypeToken<List<GetClientesDTO>>() {
+		}.getType());
+
+		return ResponseEntity.status(HttpStatus.OK).body(clientesDTO);
 	}
 
 	@ApiOperation("Serviço para consulta de cliente por id.")
 	@GetMapping("/api/clientes/{id}")
 	public ResponseEntity<GetClientesDTO> getById(@PathVariable("id") Integer idCliente) {
-		return null;
+
+		Cliente cliente = clienteService.obterPorId(idCliente);
+
+		if (cliente != null) {
+
+			ModelMapper modelMapper = new ModelMapper();
+			GetClientesDTO clienteDTO = modelMapper.map(cliente, GetClientesDTO.class);
+
+			return ResponseEntity.status(HttpStatus.OK).body(clienteDTO);
+		} else {
+			return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
+		}
 	}
 }
